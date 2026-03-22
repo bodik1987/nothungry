@@ -16,6 +16,8 @@ enum class AppScreen {
     BON_APPETIT,
     LIGHT_MEAL,
     UNSURE,
+    CALORIES,
+    CALORIES_SEARCH,
 }
 
 class HungerViewModel : ViewModel() {

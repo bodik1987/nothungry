@@ -20,7 +20,9 @@ import com.bodik.nothungry.ui.theme.DEFAULT_SPACER
 
 @Composable
 fun ScreenLayout(
-    title: String, subtitle: String, content: @Composable () -> Unit
+    title: String,
+    subtitle: String,
+    content: @Composable () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -31,18 +33,13 @@ fun ScreenLayout(
     ) {
         Spacer(modifier = Modifier.height(DEFAULT_SPACER * 2))
 
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineLarge
-        )
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Text(text = title, style = MaterialTheme.typography.headlineLarge)
 
         Spacer(modifier = Modifier.height(DEFAULT_SPACER))
 
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.titleLarge,
-            color = Color.Gray
-        )
+        Text(text = subtitle, style = MaterialTheme.typography.titleLarge, color = Color.Gray)
 
         Spacer(modifier = Modifier.height(DEFAULT_SPACER))
 
