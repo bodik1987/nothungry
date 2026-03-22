@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,17 +27,20 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,123 +57,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.Product
 import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 
-// --- Переиспользуемые компоненты ---
-
-@Composable
-fun CaloriesDialog(
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(RADIUS_OUTER)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                content = { content() }
-            )
-        }
-    }
-}
-
-@Composable
-fun NumberInputBox(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    focusRequester: FocusRequester? = null,
-) {
-    Box(
-        modifier = modifier
-            .height(48.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(RADIUS_OUTER / 2)
-            )
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = { if (it.all { c -> c.isDigit() }) onValueChange(it) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            textStyle = TextStyle(
-                fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-            singleLine = true,
-            decorationBox = { innerTextField ->
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = TextStyle(
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            textAlign = TextAlign.Center
-                        )
-                    )
-                }
-                innerTextField()
-            }
-        )
-    }
-}
-
-@Composable
-fun PlainTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    fontSize: Int = 22,
-    color: @Composable () -> androidx.compose.ui.graphics.Color = { MaterialTheme.colorScheme.onSurface },
-    focusRequester: FocusRequester? = null,
-) {
-    val resolvedColor = color()
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        textStyle = TextStyle(fontSize = fontSize.sp, color = resolvedColor),
-        modifier = modifier
-            .fillMaxWidth()
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-        singleLine = true,
-        decorationBox = { innerTextField ->
-            if (value.isEmpty()) {
-                Text(
-                    text = placeholder,
-                    style = TextStyle(
-                        fontSize = fontSize.sp,
-                        color = resolvedColor.copy(alpha = 0.5f)
-                    )
-                )
-            }
-            innerTextField()
-        }
-    )
-}
-
-// --- SearchScreen ---
-
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: CaloriesViewModel,
@@ -182,7 +74,7 @@ fun SearchScreen(
     var pendingProduct by remember { mutableStateOf<Product?>(null) }
     var weightInput by remember { mutableStateOf("") }
 
-    var showEditDialog by remember { mutableStateOf(false) }
+    var showEditSheet by remember { mutableStateOf(false) }
     var productToEdit by remember { mutableStateOf<Product?>(null) }
     var editTitle by remember { mutableStateOf("") }
     var editCals by remember { mutableStateOf("") }
@@ -248,7 +140,7 @@ fun SearchScreen(
                             editCals = ""
                             editDescription = ""
                             productToEdit = null
-                            showEditDialog = true
+                            showEditSheet = true
                         },
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -291,7 +183,7 @@ fun SearchScreen(
                                     editTitle = product.title
                                     editCals = product.calories.toString()
                                     editDescription = product.description ?: ""
-                                    showEditDialog = true
+                                    showEditSheet = true
                                 }
                             )
                             .padding(2.dp),
@@ -319,106 +211,212 @@ fun SearchScreen(
         }
     }
 
-    // --- Диалог добавления порции ---
+    // --- Боттомшит добавления порции ---
     val weightFocusRequester = remember { FocusRequester() }
     if (pendingProduct != null) {
         LaunchedEffect(pendingProduct) { weightFocusRequester.requestFocus() }
-        CaloriesDialog(onDismiss = { pendingProduct = null }) {
-            Text(pendingProduct?.title ?: "", style = MaterialTheme.typography.titleLarge)
-            if (!pendingProduct?.description.isNullOrBlank()) {
-                Text(
-                    pendingProduct!!.description!!,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ModalBottomSheet(
+            onDismissRequest = { pendingProduct = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                NumberInputBox(
-                    value = weightInput,
-                    onValueChange = { weightInput = it },
-                    placeholder = "Вес (г)",
-                    modifier = Modifier.weight(0.65f),
-                    focusRequester = weightFocusRequester
-                )
-                Button(
-                    onClick = {
-                        val w = weightInput.toIntOrNull() ?: 0
-                        if (w > 0) {
-                            val idx =
-                                selectedItems.indexOfFirst { it.title == pendingProduct?.title }
-                            if (idx != -1) selectedItems[idx] =
-                                selectedItems[idx].copy(weight = selectedItems[idx].weight + w)
-                            else selectedItems.add(pendingProduct!!.copy(weight = w))
-                            pendingProduct = null
-                            searchQuery = ""
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                ) { Text("Добавить") }
+                Text(pendingProduct?.title ?: "", style = MaterialTheme.typography.titleLarge)
+                if (!pendingProduct?.description.isNullOrBlank()) {
+                    Text(
+                        pendingProduct!!.description!!,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    NumberInputBox(
+                        value = weightInput,
+                        onValueChange = { weightInput = it },
+                        placeholder = "Вес (г)",
+                        modifier = Modifier.weight(0.65f),
+                        focusRequester = weightFocusRequester
+                    )
+                    Button(
+                        onClick = {
+                            val w = weightInput.toIntOrNull() ?: 0
+                            if (w > 0) {
+                                val idx =
+                                    selectedItems.indexOfFirst { it.title == pendingProduct?.title }
+                                if (idx != -1) selectedItems[idx] =
+                                    selectedItems[idx].copy(weight = selectedItems[idx].weight + w)
+                                else selectedItems.add(pendingProduct!!.copy(weight = w))
+                                pendingProduct = null
+                                searchQuery = ""
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    ) { Text("Добавить") }
+                }
             }
         }
     }
 
-    // --- Диалог создания/редактирования продукта ---
-    if (showEditDialog) {
-        CaloriesDialog(onDismiss = { showEditDialog = false }) {
-            PlainTextField(
-                value = editTitle,
-                onValueChange = { editTitle = it },
-                placeholder = "Название",
-                focusRequester = weightFocusRequester
-            )
-            PlainTextField(
-                value = editDescription,
-                onValueChange = { editDescription = it },
-                placeholder = "Описание",
-                fontSize = 16,
-                color = { MaterialTheme.colorScheme.outline }
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+    // --- Боттомшит создания/редактирования продукта ---
+    if (showEditSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showEditSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                NumberInputBox(
-                    value = editCals,
-                    onValueChange = { editCals = it },
-                    placeholder = "Ккал",
-                    modifier = Modifier.weight(0.65f)
+                PlainTextField(
+                    value = editTitle,
+                    onValueChange = { editTitle = it },
+                    placeholder = "Название",
+                    focusRequester = weightFocusRequester
                 )
-                Button(
-                    onClick = {
-                        val p = Product(
-                            id = productToEdit?.id,
-                            title = editTitle,
-                            calories = editCals.toIntOrNull() ?: 0,
-                            description = editDescription
-                        )
-                        if (productToEdit == null) viewModel.addProduct(p)
-                        else viewModel.updateProduct(p)
-                        showEditDialog = false
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                ) { Text("Сохранить") }
-            }
-            if (productToEdit != null) {
-                Button(
-                    onClick = { viewModel.deleteProduct(productToEdit!!); showEditDialog = false },
+                PlainTextField(
+                    value = editDescription,
+                    onValueChange = { editDescription = it },
+                    placeholder = "Описание",
+                    fontSize = 16,
+                    color = { MaterialTheme.colorScheme.outline }
+                )
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.error
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    NumberInputBox(
+                        value = editCals,
+                        onValueChange = { editCals = it },
+                        placeholder = "Ккал",
+                        modifier = Modifier.weight(0.65f)
                     )
-                ) { Text("Удалить") }
+                    Button(
+                        onClick = {
+                            val p = Product(
+                                id = productToEdit?.id,
+                                title = editTitle,
+                                calories = editCals.toIntOrNull() ?: 0,
+                                description = editDescription
+                            )
+                            if (productToEdit == null) viewModel.addProduct(p)
+                            else viewModel.updateProduct(p)
+                            showEditSheet = false
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    ) { Text("Сохранить") }
+                }
+                if (productToEdit != null) {
+                    Button(
+                        onClick = {
+                            viewModel.deleteProduct(productToEdit!!); showEditSheet = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) { Text("Удалить") }
+                }
             }
         }
     }
+}
+
+@Composable
+fun NumberInputBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
+) {
+    Box(
+        modifier = modifier
+            .height(48.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(RADIUS_OUTER / 2)
+            )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = { if (it.all { c -> c.isDigit() }) onValueChange(it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            textStyle = TextStyle(
+                fontSize = 22.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = TextStyle(
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            textAlign = TextAlign.Center
+                        )
+                    )
+                }
+                innerTextField()
+            }
+        )
+    }
+}
+
+@Composable
+fun PlainTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    fontSize: Int = 22,
+    color: @Composable () -> Color = { MaterialTheme.colorScheme.onSurface },
+    focusRequester: FocusRequester? = null,
+) {
+    val resolvedColor = color()
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        textStyle = TextStyle(fontSize = fontSize.sp, color = resolvedColor),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+        singleLine = true,
+        decorationBox = { innerTextField ->
+            if (value.isEmpty()) {
+                Text(
+                    text = placeholder,
+                    style = TextStyle(
+                        fontSize = fontSize.sp,
+                        color = resolvedColor.copy(alpha = 0.5f)
+                    )
+                )
+            }
+            innerTextField()
+        }
+    )
 }
