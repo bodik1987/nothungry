@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,14 +23,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,9 +36,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,8 +62,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.Product
+import com.bodik.nothungry.ui.components.ButtonGroup
+import com.bodik.nothungry.ui.components.ButtonGroupItem
+import com.bodik.nothungry.ui.theme.DEFAULT_SPACER
 import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 
 @Composable
@@ -242,53 +242,52 @@ fun DayCalories(
         var tempWeight by remember { mutableFloatStateOf(viewModel.userWeight) }
         var tempAge by remember { mutableStateOf(viewModel.userAge.toString()) }
 
-        Dialog(onDismissRequest = { showSettingsDialog = false }) {
-            Card(
+        Dialog(
+            onDismissRequest = { showSettingsDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(32.dp)
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(RADIUS_OUTER)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(DEFAULT_SPACER)
                 ) {
-                    Text(
-                        "Вес: ${tempWeight.toInt()} кг",
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        fontSize = 20.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Slider(
-                        value = tempWeight,
-                        onValueChange = { tempWeight = it },
-                        valueRange = 50f..150f
-                    )
-                    OutlinedTextField(
-                        value = tempAge,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) tempAge = it },
-                        label = { Text("Возраст") },
-                        textStyle = TextStyle(fontSize = 20.sp, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                    Button(
-                        onClick = { viewModel.clearDay(); showSettingsDialog = false },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
+                        horizontalArrangement = Arrangement.spacedBy(DEFAULT_SPACER / 2)
+                    ) {
+                        LabeledBasicTextField(
+                            value = tempAge,
+                            onValueChange = { tempAge = it },
+                            label = "Возраст",
+                            modifier = Modifier.weight(1f)
                         )
-                    ) { Text("Очистить день") }
-                    Button(
-                        onClick = {
-                            viewModel.saveUserSettings(
-                                tempWeight,
-                                tempAge.toIntOrNull() ?: viewModel.userAge
-                            )
-                            showSettingsDialog = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Сохранить") }
+                        LabeledBasicTextField(
+                            value = tempWeight.toInt().toString(),
+                            onValueChange = { tempWeight = it.toFloatOrNull() ?: tempWeight },
+                            label = "Вес (кг)",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    ButtonGroup(
+                        items = listOf(
+                            ButtonGroupItem(
+                                "Очистить день",
+                                { viewModel.clearDay(); showSettingsDialog = false }),
+                            ButtonGroupItem("Сохранить", {
+                                viewModel.saveUserSettings(
+                                    tempWeight,
+                                    tempAge.toIntOrNull() ?: viewModel.userAge
+                                )
+                                showSettingsDialog = false
+                            }),
+                        )
+                    )
                 }
             }
         }
@@ -296,54 +295,62 @@ fun DayCalories(
 
     // --- Диалог редактирования позиции ---
     if (itemToEdit != null) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = { itemToEdit = null },
-            title = { Text(itemToEdit?.title ?: "") },
-            text = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(RADIUS_OUTER)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    OutlinedTextField(
-                        value = weightInput,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) weightInput = it },
-                        label = { Text("Вес (г)") },
-                        textStyle = TextStyle(fontSize = 20.sp, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(0.65f)
-                    )
-                    OutlinedTextField(
-                        value = additionalWeight,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) additionalWeight = it },
-                        label = { Text("Добавить (+г)") },
-                        textStyle = TextStyle(fontSize = 20.sp, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                    Text(itemToEdit?.title ?: "", style = MaterialTheme.typography.titleLarge)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(DEFAULT_SPACER / 2)
+                    ) {
+                        LabeledBasicTextField(
+                            value = weightInput,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) weightInput = it },
+                            label = "Вес (г)",
+                            modifier = Modifier.weight(1f)
+                        )
+                        LabeledBasicTextField(
+                            value = additionalWeight,
+                            onValueChange = {
+                                if (it.all { c -> c.isDigit() }) additionalWeight = it
+                            },
+                            label = "Добавить (+г)",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    ButtonGroup(
+                        items = listOf(
+                            ButtonGroupItem("Удалить", {
+                                selectedItems.remove(itemToEdit)
+                                itemToEdit = null
+                            }),
+                            ButtonGroupItem("Обновить", {
+                                val idx = selectedItems.indexOf(itemToEdit)
+                                if (idx != -1) {
+                                    val base = weightInput.toIntOrNull() ?: 0
+                                    val extra = additionalWeight.toIntOrNull() ?: 0
+                                    selectedItems[idx] = itemToEdit!!.copy(weight = base + extra)
+                                }
+                                itemToEdit = null
+                            }),
+                        )
                     )
                 }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    val idx = selectedItems.indexOf(itemToEdit)
-                    if (idx != -1) {
-                        val base = weightInput.toIntOrNull() ?: 0
-                        val extra = additionalWeight.toIntOrNull() ?: 0
-                        selectedItems[idx] = itemToEdit!!.copy(weight = base + extra)
-                    }
-                    itemToEdit = null
-                }) { Text("Обновить") }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { selectedItems.remove(itemToEdit); itemToEdit = null },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) { Text("Удалить") }
             }
-        )
+        }
     }
 }
 
@@ -361,5 +368,60 @@ fun getGroupedShape(index: Int, total: Int): RoundedCornerShape {
         )
 
         else -> RoundedCornerShape(s)
+    }
+}
+
+@Composable
+fun LabeledBasicTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(RADIUS_OUTER / 2)
+                )
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = { if (it.all { c -> c.isDigit() }) onValueChange(it) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = TextStyle(
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                decorationBox = { innerTextField ->
+                    if (value.isEmpty()) {
+                        Text(
+                            text = label,
+                            style = TextStyle(
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                textAlign = TextAlign.Center
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+        }
     }
 }

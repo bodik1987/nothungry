@@ -1,27 +1,29 @@
 package com.bodik.nothungry.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -51,8 +53,121 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.Product
+import com.bodik.nothungry.ui.theme.RADIUS_OUTER
+
+// --- Переиспользуемые компоненты ---
+
+@Composable
+fun CaloriesDialog(
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(RADIUS_OUTER)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                content = { content() }
+            )
+        }
+    }
+}
+
+@Composable
+fun NumberInputBox(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
+) {
+    Box(
+        modifier = modifier
+            .height(48.dp)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(RADIUS_OUTER / 2)
+            )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = { if (it.all { c -> c.isDigit() }) onValueChange(it) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            textStyle = TextStyle(
+                fontSize = 22.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = TextStyle(
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            textAlign = TextAlign.Center
+                        )
+                    )
+                }
+                innerTextField()
+            }
+        )
+    }
+}
+
+@Composable
+fun PlainTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    fontSize: Int = 22,
+    color: @Composable () -> androidx.compose.ui.graphics.Color = { MaterialTheme.colorScheme.onSurface },
+    focusRequester: FocusRequester? = null,
+) {
+    val resolvedColor = color()
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        textStyle = TextStyle(fontSize = fontSize.sp, color = resolvedColor),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
+        singleLine = true,
+        decorationBox = { innerTextField ->
+            if (value.isEmpty()) {
+                Text(
+                    text = placeholder,
+                    style = TextStyle(
+                        fontSize = fontSize.sp,
+                        color = resolvedColor.copy(alpha = 0.5f)
+                    )
+                )
+            }
+            innerTextField()
+        }
+    )
+}
+
+// --- SearchScreen ---
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -162,9 +277,8 @@ fun SearchScreen(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             itemsIndexed(items = filtered, key = { _, p -> p.id ?: p.title }) { index, product ->
-                val shape = getGroupedShape(index, filtered.size)
                 Surface(
-                    shape = shape,
+                    shape = getGroupedShape(index, filtered.size),
                     color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -209,126 +323,102 @@ fun SearchScreen(
     val weightFocusRequester = remember { FocusRequester() }
     if (pendingProduct != null) {
         LaunchedEffect(pendingProduct) { weightFocusRequester.requestFocus() }
-        AlertDialog(
-            onDismissRequest = { pendingProduct = null },
-            title = {
-                Column {
-                    Text(pendingProduct?.title ?: "")
-                    if (!pendingProduct?.description.isNullOrBlank()) {
-                        Text(
-                            pendingProduct!!.description!!,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedTextField(
-                        value = weightInput,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) weightInput = it },
-                        label = { Text("Вес (г)") },
-                        textStyle = TextStyle(fontSize = 20.sp, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier
-                            .weight(0.65f)
-                            .focusRequester(weightFocusRequester)
-                    )
-                    Button(
-                        onClick = {
-                            val w = weightInput.toIntOrNull() ?: 0
-                            if (w > 0) {
-                                val idx =
-                                    selectedItems.indexOfFirst { it.title == pendingProduct?.title }
-                                if (idx != -1) selectedItems[idx] =
-                                    selectedItems[idx].copy(weight = selectedItems[idx].weight + w)
-                                else selectedItems.add(pendingProduct!!.copy(weight = w))
-                                pendingProduct = null
-                                searchQuery = ""
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Добавить") }
-                }
+        CaloriesDialog(onDismiss = { pendingProduct = null }) {
+            Text(pendingProduct?.title ?: "", style = MaterialTheme.typography.titleLarge)
+            if (!pendingProduct?.description.isNullOrBlank()) {
+                Text(
+                    pendingProduct!!.description!!,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                NumberInputBox(
+                    value = weightInput,
+                    onValueChange = { weightInput = it },
+                    placeholder = "Вес (г)",
+                    modifier = Modifier.weight(0.65f),
+                    focusRequester = weightFocusRequester
+                )
+                Button(
+                    onClick = {
+                        val w = weightInput.toIntOrNull() ?: 0
+                        if (w > 0) {
+                            val idx =
+                                selectedItems.indexOfFirst { it.title == pendingProduct?.title }
+                            if (idx != -1) selectedItems[idx] =
+                                selectedItems[idx].copy(weight = selectedItems[idx].weight + w)
+                            else selectedItems.add(pendingProduct!!.copy(weight = w))
+                            pendingProduct = null
+                            searchQuery = ""
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) { Text("Добавить") }
+            }
+        }
     }
 
     // --- Диалог создания/редактирования продукта ---
     if (showEditDialog) {
-        AlertDialog(
-            onDismissRequest = { showEditDialog = false },
-            title = { Text(if (productToEdit == null) "Новый продукт" else "Редактировать") },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = editTitle,
-                        onValueChange = { editTitle = it },
-                        label = { Text("Название") },
-                        textStyle = TextStyle(fontSize = 18.sp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = editDescription,
-                        onValueChange = { editDescription = it },
-                        label = { Text("Описание") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            dismissButton = {
-                if (productToEdit != null) {
-                    Button(
-                        onClick = {
-                            viewModel.deleteProduct(productToEdit!!)
-                            showEditDialog = false
-                        },
-                        modifier = Modifier.offset(y = 10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
+        CaloriesDialog(onDismiss = { showEditDialog = false }) {
+            PlainTextField(
+                value = editTitle,
+                onValueChange = { editTitle = it },
+                placeholder = "Название",
+                focusRequester = weightFocusRequester
+            )
+            PlainTextField(
+                value = editDescription,
+                onValueChange = { editDescription = it },
+                placeholder = "Описание",
+                fontSize = 16,
+                color = { MaterialTheme.colorScheme.outline }
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                NumberInputBox(
+                    value = editCals,
+                    onValueChange = { editCals = it },
+                    placeholder = "Ккал",
+                    modifier = Modifier.weight(0.65f)
+                )
+                Button(
+                    onClick = {
+                        val p = Product(
+                            id = productToEdit?.id,
+                            title = editTitle,
+                            calories = editCals.toIntOrNull() ?: 0,
+                            description = editDescription
                         )
-                    ) { Text("Удалить") }
-                }
-            },
-            confirmButton = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedTextField(
-                        value = editCals,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) editCals = it },
-                        label = { Text("Ккал", textAlign = TextAlign.Center) },
-                        textStyle = TextStyle(fontSize = 20.sp, textAlign = TextAlign.Center),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(0.65f)
-                    )
-                    Button(
-                        onClick = {
-                            val p = Product(
-                                id = productToEdit?.id,
-                                title = editTitle,
-                                calories = editCals.toIntOrNull() ?: 0,
-                                description = editDescription
-                            )
-                            if (productToEdit == null) viewModel.addProduct(p)
-                            else viewModel.updateProduct(p)
-                            showEditDialog = false
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Сохранить") }
-                }
+                        if (productToEdit == null) viewModel.addProduct(p)
+                        else viewModel.updateProduct(p)
+                        showEditDialog = false
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) { Text("Сохранить") }
             }
-        )
+            if (productToEdit != null) {
+                Button(
+                    onClick = { viewModel.deleteProduct(productToEdit!!); showEditDialog = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) { Text("Удалить") }
+            }
+        }
     }
 }
