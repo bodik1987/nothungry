@@ -21,37 +21,39 @@ import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 
 @Composable
 fun Unsure(
-    onBored: () -> Unit,
+    onLightMeal: () -> Unit
 ) {
     val items = listOf(
-        IslandListItem("1", "Будешь ли рад, что съел это, через два часа?"),
+        IslandListItem("1", "Потом же будет тяжело!"),
         IslandListItem(
             "2",
-            "Назови 3 причины зачем это есть: часто уже перечисляя понимаешь, что не нужно"
+            "Зачем это есть?"
         ),
-        IslandListItem("3", "Всего одна конфета - примерно 10 минут бега в среднем темпе"),
+        IslandListItem("3", "1 конфета - 10 минут бега"),
+        IslandListItem("4", "Выйди прогуляйся"),
+        IslandListItem("5", "Поработай за компьютером"),
+        IslandListItem("6", "Выпей воды, чаю, кофе"),
+        IslandListItem("7", "Сделай уборку"),
+        IslandListItem("8", "Поставь таймер на 15 минут"),
+        IslandListItem("9", "Сделай 10 глубоких вдохов"),
     )
 
     ScreenLayout(
         title = "Не уверен?",
-        subtitle = "Потерпи. 90% импульсов проходят за 15 минут"
     ) {
         IslandColumn(items = items)
 
         Spacer(modifier = Modifier.height(DEFAULT_SPACER))
 
         Button(
-            onClick = onBored,
+            onClick = onLightMeal,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(ITEM_SPACING),
-            contentPadding = PaddingValues(
-                horizontal = DEFAULT_SPACER,
-                vertical = DEFAULT_SPACER * 2
-            ),
+            contentPadding = PaddingValues(DEFAULT_SPACER),
             shape = RoundedCornerShape(RADIUS_OUTER),
         ) {
-            Text("Наверное, мне просто скучно", style = MaterialTheme.typography.bodyLarge)
+            Text("Лёгкий приём пищи", style = MaterialTheme.typography.bodyLarge)
         }
 
         BottomInfo("Ограничения не навсегда - просто сейчас телу нужна пауза от тяжёлого")

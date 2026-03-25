@@ -7,19 +7,16 @@ import com.bodik.nothungry.ui.components.ScreenLayout
 
 @Composable
 fun HungerCheck(
-    onBored: () -> Unit,
     onHungry: () -> Unit,
     onUnsure: () -> Unit,
 ) {
     ScreenLayout(
         title = "Хочешь есть?",
-        subtitle = "Это точно голод?",
     ) {
         ButtonGroup(
             items = listOf(
-                ButtonGroupItem("Скучно / стресс", onBored),
-                ButtonGroupItem("Не уверен", onUnsure),
-                ButtonGroupItem("Я голоден", onHungry),
+                ButtonGroupItem("Не особо", onUnsure),
+                ButtonGroupItem("Да", onHungry),
             )
         )
     }

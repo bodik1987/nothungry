@@ -54,8 +54,7 @@ fun ButtonGroup(
                         bottomEnd = if (isLastRow) RADIUS_OUTER else RADIUS_INNER,
                     ),
                     contentPadding = PaddingValues(
-                        horizontal = DEFAULT_SPACER,
-                        vertical = DEFAULT_SPACER * 2
+                        horizontal = DEFAULT_SPACER
                     )
                 ) {
                     Text(
@@ -86,8 +85,7 @@ fun ButtonGroup(
                                 bottomEnd = if (isLastRow && !isLeft) RADIUS_OUTER else RADIUS_INNER,
                             ),
                             contentPadding = PaddingValues(
-                                horizontal = DEFAULT_SPACER,
-                                vertical = DEFAULT_SPACER * 2
+                                DEFAULT_SPACER
                             )
                         ) {
                             Text(

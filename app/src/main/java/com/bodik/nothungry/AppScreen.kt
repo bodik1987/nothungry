@@ -8,9 +8,7 @@ import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.HungerViewModel
 import com.bodik.nothungry.ui.screens.BonAppetit
 import com.bodik.nothungry.ui.screens.DayCalories
-import com.bodik.nothungry.ui.screens.Distract
 import com.bodik.nothungry.ui.screens.HungerCheck
-import com.bodik.nothungry.ui.screens.HungerConfirm
 import com.bodik.nothungry.ui.screens.LateNight
 import com.bodik.nothungry.ui.screens.LightMeal
 import com.bodik.nothungry.ui.screens.SearchScreen
@@ -26,22 +24,13 @@ fun AppContent(
 
     when (screen) {
         AppScreen.LATE_NIGHT -> LateNight(
-            onHungry = { viewModel.navigateTo(AppScreen.HUNGER_CONFIRM) },
+            onHungry = { viewModel.navigateTo(AppScreen.BON_APPETIT) },
             onLightMeal = { viewModel.navigateTo(AppScreen.LIGHT_MEAL) },
         )
 
         AppScreen.HUNGER_CHECK -> HungerCheck(
-            onBored = { viewModel.navigateTo(AppScreen.DISTRACT) },
-            onHungry = { viewModel.navigateTo(AppScreen.HUNGER_CONFIRM) },
+            onHungry = { viewModel.navigateTo(AppScreen.BON_APPETIT) },
             onUnsure = { viewModel.navigateTo(AppScreen.UNSURE) },
-        )
-
-        AppScreen.DISTRACT -> Distract()
-
-        AppScreen.HUNGER_CONFIRM -> HungerConfirm(
-            onConfirm = { viewModel.navigateTo(AppScreen.BON_APPETIT) },
-            onUnsure = { viewModel.navigateTo(AppScreen.UNSURE) },
-            onLightMeal = { viewModel.navigateTo(AppScreen.LIGHT_MEAL) }
         )
 
         AppScreen.BON_APPETIT -> BonAppetit(
@@ -51,7 +40,7 @@ fun AppContent(
         AppScreen.LIGHT_MEAL -> LightMeal()
 
         AppScreen.UNSURE -> Unsure(
-            onBored = { viewModel.navigateTo(AppScreen.DISTRACT) }
+            onLightMeal = { viewModel.navigateTo(AppScreen.LIGHT_MEAL) }
         )
 
         AppScreen.CALORIES -> DayCalories(

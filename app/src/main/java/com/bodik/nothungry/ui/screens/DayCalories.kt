@@ -111,6 +111,7 @@ fun DayCalories(
     LaunchedEffect(selectedItems.toList()) { viewModel.saveDiary() }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.nestedScroll(nestedScrollConnection),
         topBar = {
             Column(modifier = Modifier.padding(16.dp)) {

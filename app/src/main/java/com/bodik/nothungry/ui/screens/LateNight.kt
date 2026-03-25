@@ -31,7 +31,6 @@ fun LateNight(
 
     ScreenLayout(
         title = "Уже поздно!",
-        subtitle = "После 18:00 лучше не есть"
     ) {
         IslandColumn(items = items)
 

@@ -49,7 +49,8 @@ fun LightMeal(
                 Meal(2, "Творог"),
                 Meal(3, "Квашеные овощи"),
                 Meal(4, "Чай"),
-                Meal(5, "Яичница")
+                Meal(5, "Яичница"),
+                Meal(5, "Яблоко")
             )
         )
     }
@@ -99,7 +100,6 @@ fun LightMeal(
 
     ScreenLayout(
         title = "Лёгкий приём пищи",
-        subtitle = "Положи меньше, чем хочется - добавить всегда успеешь"
     ) {
         IslandColumn(
             items = meals.map { meal ->
@@ -119,7 +119,7 @@ fun LightMeal(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(
                 horizontal = DEFAULT_SPACER,
-                vertical = DEFAULT_SPACER * 2
+                vertical = DEFAULT_SPACER
             ),
             shape = RoundedCornerShape(RADIUS_OUTER),
         ) {
@@ -198,10 +198,7 @@ fun LightMeal(
                 Button(
                     onClick = { save() },
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(
-                        horizontal = DEFAULT_SPACER,
-                        vertical = DEFAULT_SPACER * 2
-                    ),
+                    contentPadding = PaddingValues(DEFAULT_SPACER),
                     shape = RoundedCornerShape(RADIUS_OUTER),
                 ) {
                     Text(

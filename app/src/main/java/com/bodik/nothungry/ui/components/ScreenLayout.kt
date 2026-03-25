@@ -14,14 +14,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.bodik.nothungry.ui.theme.DEFAULT_SPACER
 
 @Composable
 fun ScreenLayout(
     title: String,
-    subtitle: String,
     content: @Composable () -> Unit,
 ) {
     Column(
@@ -36,10 +34,6 @@ fun ScreenLayout(
         Spacer(modifier = Modifier.height(48.dp))
 
         Text(text = title, style = MaterialTheme.typography.headlineLarge)
-
-        Spacer(modifier = Modifier.height(DEFAULT_SPACER))
-
-        Text(text = subtitle, style = MaterialTheme.typography.titleLarge, color = Color.Gray)
 
         Spacer(modifier = Modifier.height(DEFAULT_SPACER))
 

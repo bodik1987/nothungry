@@ -22,15 +22,14 @@ import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 fun BonAppetit(onLightMeal: () -> Unit) {
 
     val items = listOf(
-        IslandListItem("1", "Ешь медленно, жуй дольше обычного"),
-        IslandListItem("2", "Вставай из-за стола чуть голодным. Через 20 минут будет в самый раз"),
-        IslandListItem("3", "Съешь половину - подожди 10 минут. Потом решишь, нужно ли ещё"),
-        IslandListItem("4", "Уменьшай плотность еды (больше салата)"),
+        IslandListItem("1", "Положи меньше - добавить успеешь"),
+        IslandListItem("2", "Ешь медленно, жуй дольше"),
+        IslandListItem("3", "Вставай чуть голодным"),
+        IslandListItem("4", "Уменьшай плотность еды"),
     )
 
     ScreenLayout(
         title = "Приятного аппетита",
-        subtitle = "Положи меньше, чем хочется. Добавить всегда успеешь"
     ) {
         IslandColumn(items = items)
 
@@ -44,7 +43,7 @@ fun BonAppetit(onLightMeal: () -> Unit) {
             shape = RoundedCornerShape(RADIUS_OUTER),
             contentPadding = PaddingValues(
                 horizontal = DEFAULT_SPACER,
-                vertical = DEFAULT_SPACER * 2
+                vertical = DEFAULT_SPACER
             )
         ) {
             Text(text = "Лёгкий приём пищи", style = MaterialTheme.typography.bodyLarge)

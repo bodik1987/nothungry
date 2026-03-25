@@ -22,4 +22,6 @@ fun BottomInfo(
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()
     )
+    
+    Spacer(modifier = Modifier.height(DEFAULT_SPACER * 2))
 }
