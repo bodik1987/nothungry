@@ -125,6 +125,9 @@ fun SearchScreen(
     onBack: () -> Unit,
 ) {
     val productsCache = viewModel.productsCache
+    val currentMeal = viewModel.meals.find { it.id == mealId }
+    val mealName = currentMeal?.name ?: "Приём пищи"
+    val mealCalories = currentMeal?.totalCalories ?: 0
     val totalCalories = viewModel.meals.sumOf { it.totalCalories }
     val dailyNorm = viewModel.dailyNorm
 
@@ -201,6 +204,27 @@ fun SearchScreen(
                             Icon(Icons.Default.Add, null, modifier = Modifier.size(32.dp))
                         }
                     }
+
+                    Surface(
+                        modifier = Modifier.padding(top = 16.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(RADIUS_OUTER)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "$mealName: $mealCalories ккал",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (mealCalories > 500) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                }
+                            )
+                        }
+                    }
                 }
             )
         }
@@ -266,6 +290,13 @@ fun SearchScreen(
     val weightFocusRequester = remember { FocusRequester() }
     if (pendingProduct != null) {
         LaunchedEffect(pendingProduct) { weightFocusRequester.requestFocus() }
+
+        // Рассчитываем калории для текущего ввода веса
+        val currentWeight = weightInput.toIntOrNull() ?: 0
+        val calculatedCalories = if (currentWeight > 0) {
+            (pendingProduct!!.calories * currentWeight) / 100
+        } else 0
+
         ModalBottomSheet(
             onDismissRequest = { pendingProduct = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -277,7 +308,17 @@ fun SearchScreen(
                     .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(pendingProduct?.title ?: "", style = MaterialTheme.typography.titleLarge)
+                val titleText = remember(pendingProduct, calculatedCalories) {
+                    val name = pendingProduct?.title ?: ""
+                    if (calculatedCalories > 0) "$name - $calculatedCalories ккал" else name
+                }
+
+                Text(
+                    text = titleText,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 if (!pendingProduct?.description.isNullOrBlank()) {
                     Text(
                         pendingProduct!!.description!!,
@@ -285,6 +326,7 @@ fun SearchScreen(
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -294,7 +336,7 @@ fun SearchScreen(
                         value = weightInput,
                         onValueChange = { weightInput = it },
                         placeholder = "Вес (г)",
-                        modifier = Modifier.weight(0.65f),
+                        modifier = Modifier.weight(0.45f), // Немного уменьшил, чтобы кнопка была больше
                         focusRequester = weightFocusRequester
                     )
                     Button(
@@ -316,7 +358,9 @@ fun SearchScreen(
                             .weight(1f)
                             .height(48.dp),
                         shape = RoundedCornerShape(RADIUS_OUTER),
-                    ) { Text("Добавить") }
+                    ) {
+                        Text("Добавить")
+                    }
                 }
             }
         }
