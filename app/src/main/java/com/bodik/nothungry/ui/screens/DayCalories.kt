@@ -31,9 +31,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.EnergySavingsLeaf
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -144,27 +144,28 @@ fun DayCalories(
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut()
             ) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        16.dp,
+                        Alignment.End
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    androidx.compose.material3.ExtendedFloatingActionButton(
+                    androidx.compose.material3.FloatingActionButton(
                         onClick = onLightMeal,
-                        modifier = Modifier.height(48.dp),
-                        shape = RoundedCornerShape(RADIUS_OUTER),
+                        modifier = Modifier.size(56.dp),
+                        shape = RoundedCornerShape(16.dp),
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            0.dp,
-                            0.dp
-                        ), // Плоская или с минимальной тенью
-                        text = {
-                            Text(text = "Лёгкий приём", fontSize = 14.sp)
-                        },
-                        icon = {}
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EnergySavingsLeaf,
+                            contentDescription = "Лёгкий приём",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
 
-                    // Основная FAB
                     androidx.compose.material3.ExtendedFloatingActionButton(
                         onClick = { showAddMealDialog = true },
                         shape = RoundedCornerShape(RADIUS_OUTER),
@@ -174,7 +175,7 @@ fun DayCalories(
                             Icon(Icons.Default.Add, null, modifier = Modifier.size(24.dp))
                         },
                         text = {
-                            Text(text = "Прием пищи", fontSize = 16.sp)
+                            Text(text = "Трапеза", fontSize = 16.sp)
                         }
                     )
                 }
@@ -216,7 +217,6 @@ fun DayCalories(
         }
     }
 
-    // --- Диалог добавления приёма пищи ---
     if (showAddMealDialog) {
         AddMealDialog(
             onDismiss = { showAddMealDialog = false },
