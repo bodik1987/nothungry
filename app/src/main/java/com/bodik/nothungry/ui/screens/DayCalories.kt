@@ -7,6 +7,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -277,7 +279,6 @@ fun DayCalories(
         }
     }
 
-    // --- Боттомшит настроек ---
     if (showSettingsSheet) {
         var tempWeight by remember { mutableFloatStateOf(viewModel.userWeight) }
         var tempAge by remember { mutableStateOf(viewModel.userAge.toString()) }
@@ -380,11 +381,15 @@ fun DayCalories(
 
                 ButtonGroup(
                     items = listOf(
-                        ButtonGroupItem("Удалить", {
-                            viewModel.removeProductFromMeal(editingMealId!!, itemToEdit!!)
-                            itemToEdit = null
-                            editingMealId = null
-                        }),
+                        ButtonGroupItem(
+                            "Удалить",
+                            {
+                                viewModel.removeProductFromMeal(editingMealId!!, itemToEdit!!)
+                                itemToEdit = null
+                                editingMealId = null
+                            },
+                            isError = true,
+                        ),
                         ButtonGroupItem("Обновить", {
                             val base = weightInput.toIntOrNull() ?: 0
                             val extra = additionalWeight.toIntOrNull() ?: 0
@@ -489,7 +494,9 @@ private fun QuickOptions(
     val options = listOf("Завтрак", "Обед", "Ужин", "Перекус")
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         options.forEach { option ->
