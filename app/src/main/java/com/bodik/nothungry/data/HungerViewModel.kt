@@ -11,7 +11,6 @@ import java.util.Calendar
 enum class AppScreen {
     LATE_NIGHT,
     HUNGER_CHECK,
-    BON_APPETIT,
     LIGHT_MEAL,
     UNSURE,
     CALORIES,

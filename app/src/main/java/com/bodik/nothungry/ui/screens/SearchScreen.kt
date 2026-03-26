@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,17 +28,20 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -114,7 +118,7 @@ fun NumberInputBox(
 
 // --- SearchScreen ---
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     viewModel: CaloriesViewModel,
@@ -263,46 +267,57 @@ fun SearchScreen(
     val weightFocusRequester = remember { FocusRequester() }
     if (pendingProduct != null) {
         LaunchedEffect(pendingProduct) { weightFocusRequester.requestFocus() }
-        CaloriesDialog(onDismiss = { pendingProduct = null }) {
-            Text(pendingProduct?.title ?: "", style = MaterialTheme.typography.titleLarge)
-            if (!pendingProduct?.description.isNullOrBlank()) {
-                Text(
-                    pendingProduct!!.description!!,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ModalBottomSheet(
+            onDismissRequest = { pendingProduct = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                NumberInputBox(
-                    value = weightInput,
-                    onValueChange = { weightInput = it },
-                    placeholder = "Вес (г)",
-                    modifier = Modifier.weight(0.65f),
-                    focusRequester = weightFocusRequester
-                )
-                Button(
-                    onClick = {
-                        val w = weightInput.toIntOrNull() ?: 0
-                        if (w > 0) {
-                            viewModel.addProductToMeal(
-                                mealId,
-                                pendingProduct!!.copy(
-                                    id = pendingProduct!!.id + "_" + System.currentTimeMillis(),
-                                    weight = w
+                Text(pendingProduct?.title ?: "", style = MaterialTheme.typography.titleLarge)
+                if (!pendingProduct?.description.isNullOrBlank()) {
+                    Text(
+                        pendingProduct!!.description!!,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    NumberInputBox(
+                        value = weightInput,
+                        onValueChange = { weightInput = it },
+                        placeholder = "Вес (г)",
+                        modifier = Modifier.weight(0.65f),
+                        focusRequester = weightFocusRequester
+                    )
+                    Button(
+                        onClick = {
+                            val w = weightInput.toIntOrNull() ?: 0
+                            if (w > 0) {
+                                viewModel.addProductToMeal(
+                                    mealId,
+                                    pendingProduct!!.copy(
+                                        id = pendingProduct!!.id + "_" + System.currentTimeMillis(),
+                                        weight = w
+                                    )
                                 )
-                            )
-                            pendingProduct = null
-                            searchQuery = ""
-                        }
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                ) { Text("Добавить") }
+                                pendingProduct = null
+                                searchQuery = ""
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    ) { Text("Добавить") }
+                }
             }
         }
     }
@@ -354,7 +369,7 @@ fun SearchScreen(
             if (productToEdit != null) {
                 Button(
                     onClick = { viewModel.deleteProduct(productToEdit!!); showEditDialog = false },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.error

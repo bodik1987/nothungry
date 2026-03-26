@@ -31,8 +31,6 @@ fun ScreenLayout(
     ) {
         Spacer(modifier = Modifier.height(DEFAULT_SPACER * 2))
 
-        Spacer(modifier = Modifier.height(48.dp))
-
         Text(text = title, style = MaterialTheme.typography.headlineLarge)
 
         Spacer(modifier = Modifier.height(DEFAULT_SPACER))

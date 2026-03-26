@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -82,6 +83,7 @@ import com.bodik.nothungry.ui.theme.getGroupedShape
 fun DayCalories(
     viewModel: CaloriesViewModel,
     onNavigateToSearch: (mealId: String) -> Unit,
+    onLightMeal: () -> Unit,
 ) {
     val meals = viewModel.meals
 
@@ -140,18 +142,40 @@ fun DayCalories(
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut()
             ) {
-                androidx.compose.material3.ExtendedFloatingActionButton(
-                    onClick = { showAddMealDialog = true },
-                    shape = RoundedCornerShape(RADIUS_OUTER),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    icon = {
-                        Icon(Icons.Default.Add, null, modifier = Modifier.size(24.dp))
-                    },
-                    text = {
-                        Text(text = "Прием пищи", fontSize = 16.sp)
-                    }
-                )
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    androidx.compose.material3.ExtendedFloatingActionButton(
+                        onClick = onLightMeal,
+                        modifier = Modifier.height(48.dp),
+                        shape = RoundedCornerShape(RADIUS_OUTER),
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            0.dp,
+                            0.dp
+                        ), // Плоская или с минимальной тенью
+                        text = {
+                            Text(text = "Лёгкий приём", fontSize = 14.sp)
+                        },
+                        icon = {}
+                    )
+
+                    // Основная FAB
+                    androidx.compose.material3.ExtendedFloatingActionButton(
+                        onClick = { showAddMealDialog = true },
+                        shape = RoundedCornerShape(RADIUS_OUTER),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        icon = {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(24.dp))
+                        },
+                        text = {
+                            Text(text = "Прием пищи", fontSize = 16.sp)
+                        }
+                    )
+                }
             }
         }
     ) { padding ->
@@ -408,7 +432,7 @@ private fun MealCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${meal.name} ${meal.totalCalories} ккал",
+                    text = "${meal.name} - ${meal.totalCalories} ккал",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
@@ -475,7 +499,6 @@ private fun QuickOptions(
                 onClick = { onOptionClick(option) },
                 label = { Text(option) },
                 shape = RoundedCornerShape(12.dp),
-                // Убираем стандартную галочку для лаконичности
                 leadingIcon = null
             )
         }
@@ -504,7 +527,7 @@ private fun AddMealDialog(
         )
 
         Text(
-            text = "Записывай всё, что ешь — даже маленькие перекусы. Чем точнее данные, тем лучше результат 🥗",
+            text = "Положи меньше - добавить успеешь. Уменьшай плотность еды",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline
         )
