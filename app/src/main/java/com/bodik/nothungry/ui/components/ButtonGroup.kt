@@ -25,6 +25,7 @@ import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 data class ButtonGroupItem(
     val text: String,
     val onClick: () -> Unit,
+    val isError: Boolean = false,
 )
 
 @Composable
@@ -45,6 +46,12 @@ fun ButtonGroup(
                 val item = row[0]
                 Button(
                     onClick = item.onClick,
+                    colors = if (item.isError) {
+                        androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    } else androidx.compose.material3.ButtonDefaults.buttonColors(),
                     modifier = Modifier
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(
@@ -74,6 +81,12 @@ fun ButtonGroup(
                         val isLeft = colIndex == 0
                         Button(
                             onClick = item.onClick,
+                            colors = if (item.isError) {
+                                androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            } else androidx.compose.material3.ButtonDefaults.buttonColors(),
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()

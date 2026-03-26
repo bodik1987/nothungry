@@ -7,6 +7,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +31,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -75,6 +75,7 @@ import com.bodik.nothungry.ui.components.PlainTextField
 import com.bodik.nothungry.ui.theme.DEFAULT_SPACER
 import com.bodik.nothungry.ui.theme.ITEM_SPACING
 import com.bodik.nothungry.ui.theme.RADIUS_OUTER
+import com.bodik.nothungry.ui.theme.getGroupedShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,15 +87,14 @@ fun DayCalories(
 
     var showSettingsSheet by remember { mutableStateOf(false) }
     var showAddMealDialog by remember { mutableStateOf(false) }
-    var mealToEdit by remember { mutableStateOf<Meal?>(null) }       // редактирование продукта внутри приёма
+    var mealToEditSheet by remember { mutableStateOf<Meal?>(null) }
     var itemToEdit by remember { mutableStateOf<Product?>(null) }
-    var editingMealId by remember { mutableStateOf<String?>(null) }   // какой приём редактируем продукт
+    var editingMealId by remember { mutableStateOf<String?>(null) }
     var weightInput by remember { mutableStateOf("") }
     var additionalWeight by remember { mutableStateOf("") }
 
     val dailyNorm = viewModel.dailyNorm
     val totalCalories = meals.sumOf { it.totalCalories }
-    val restCalories = dailyNorm - totalCalories
 
     var isFabVisible by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
@@ -140,12 +140,18 @@ fun DayCalories(
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut()
             ) {
-                FloatingActionButton(
+                androidx.compose.material3.ExtendedFloatingActionButton(
                     onClick = { showAddMealDialog = true },
-                    shape = RoundedCornerShape(RADIUS_OUTER)
-                ) {
-                    Icon(Icons.Default.Add, null, modifier = Modifier.size(32.dp))
-                }
+                    shape = RoundedCornerShape(RADIUS_OUTER),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    icon = {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(24.dp))
+                    },
+                    text = {
+                        Text(text = "Прием пищи", fontSize = 16.sp)
+                    }
+                )
             }
         }
     ) { padding ->
@@ -167,12 +173,11 @@ fun DayCalories(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                itemsIndexed(meals) { mealIndex, meal ->
+                itemsIndexed(meals) { _, meal ->
                     MealCard(
                         meal = meal,
-                        mealIndex = mealIndex,
-                        mealsTotal = meals.size,
                         onAddProducts = { onNavigateToSearch(meal.id) },
+                        onEditMeal = { mealToEditSheet = meal },
                         onEditProduct = { product ->
                             itemToEdit = product
                             editingMealId = meal.id
@@ -195,6 +200,57 @@ fun DayCalories(
                 if (navigateNow) onNavigateToSearch(meal.id)
             }
         )
+    }
+
+    if (mealToEditSheet != null) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        var editedName by remember(mealToEditSheet) { mutableStateOf(mealToEditSheet!!.name) }
+
+        ModalBottomSheet(
+            onDismissRequest = { mealToEditSheet = null },
+            sheetState = sheetState,
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.spacedBy(DEFAULT_SPACER)
+            ) {
+                PlainTextField(
+                    value = editedName,
+                    onValueChange = { editedName = it },
+                    placeholder = "Название приёма",
+                    fontSize = 24,
+                )
+
+                // Вставляем чипы здесь
+                QuickOptions(
+                    selectedOption = editedName,
+                    onOptionClick = { editedName = it }
+                )
+
+                ButtonGroup(
+                    items = listOf(
+                        ButtonGroupItem(
+                            "Удалить приём",
+                            {
+                                viewModel.deleteMeal(mealToEditSheet!!.id)
+                                mealToEditSheet = null
+                            },
+                            isError = true,
+                        ),
+                        ButtonGroupItem("Сохранить", {
+                            viewModel.renameMeal(
+                                mealToEditSheet!!.id,
+                                editedName.ifBlank { "Приём пищи" }
+                            )
+                            mealToEditSheet = null
+                        }),
+                    )
+                )
+            }
+        }
     }
 
     // --- Боттомшит настроек ---
@@ -236,7 +292,9 @@ fun DayCalories(
                     items = listOf(
                         ButtonGroupItem(
                             "Очистить день",
-                            { viewModel.clearDay(); showSettingsSheet = false }),
+                            { viewModel.clearDay(); showSettingsSheet = false },
+                            isError = true
+                        ),
                         ButtonGroupItem("Сохранить", {
                             viewModel.saveUserSettings(
                                 tempWeight,
@@ -262,7 +320,6 @@ fun DayCalories(
         }
     }
 
-    // --- Боттомшит редактирования продукта в приёме ---
     if (itemToEdit != null && editingMealId != null) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -321,45 +378,46 @@ fun DayCalories(
     }
 }
 
-// ---------------------------------------------------------------------------
-// MealCard — карточка одного приёма пищи
-// ---------------------------------------------------------------------------
-
 @Composable
 private fun MealCard(
     meal: Meal,
-    mealIndex: Int,
-    mealsTotal: Int,
     onAddProducts: () -> Unit,
+    onEditMeal: () -> Unit,
     onEditProduct: (Product) -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+
     Surface(
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f)
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null
+                    ) { onEditMeal() }
                     .padding(start = 16.dp, end = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${meal.name} - ${meal.totalCalories} ккал",
+                    text = "${meal.name} ${meal.totalCalories} ккал",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
                 )
                 Button(onClick = onAddProducts) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                 }
             }
 
-            // Список продуктов приёма
             if (meal.items.isNotEmpty()) {
                 Column(
                     modifier = Modifier.padding(horizontal = 8.dp),
@@ -399,9 +457,30 @@ private fun MealCard(
     }
 }
 
-// ---------------------------------------------------------------------------
-// AddMealDialog — диалог создания нового приёма пищи
-// ---------------------------------------------------------------------------
+@Composable
+private fun QuickOptions(
+    selectedOption: String,
+    onOptionClick: (String) -> Unit
+) {
+    val options = listOf("Завтрак", "Обед", "Ужин", "Перекус")
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { option ->
+            val isSelected = selectedOption == option
+            androidx.compose.material3.FilterChip(
+                selected = isSelected,
+                onClick = { onOptionClick(option) },
+                label = { Text(option) },
+                shape = RoundedCornerShape(12.dp),
+                // Убираем стандартную галочку для лаконичности
+                leadingIcon = null
+            )
+        }
+    }
+}
 
 @Composable
 private fun AddMealDialog(
@@ -415,7 +494,13 @@ private fun AddMealDialog(
             value = mealName,
             onValueChange = { mealName = it },
             placeholder = "Название приёма",
-            fontSize = 22,
+            fontSize = 24,
+        )
+
+        // Передаем текущее имя и лямбду для обновления
+        QuickOptions(
+            selectedOption = mealName,
+            onOptionClick = { mealName = it }
         )
 
         Text(
@@ -432,27 +517,6 @@ private fun AddMealDialog(
         ) {
             Text("Добавить продукты")
         }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Утилиты (общие)
-// ---------------------------------------------------------------------------
-
-fun getGroupedShape(index: Int, total: Int): RoundedCornerShape {
-    val l = 18.dp;
-    val s = 2.dp
-    return when {
-        total == 1 -> RoundedCornerShape(l)
-        index == 0 -> RoundedCornerShape(topStart = l, topEnd = l, bottomStart = s, bottomEnd = s)
-        index == total - 1 -> RoundedCornerShape(
-            topStart = s,
-            topEnd = s,
-            bottomStart = l,
-            bottomEnd = l
-        )
-
-        else -> RoundedCornerShape(s)
     }
 }
 

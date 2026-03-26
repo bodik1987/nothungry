@@ -60,6 +60,7 @@ import com.bodik.nothungry.ui.components.CaloriesDialog
 import com.bodik.nothungry.ui.components.CaloriesTopBar
 import com.bodik.nothungry.ui.components.PlainTextField
 import com.bodik.nothungry.ui.theme.RADIUS_OUTER
+import com.bodik.nothungry.ui.theme.getGroupedShape
 
 // --- Переиспользуемые компоненты ---
 
