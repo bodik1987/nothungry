@@ -25,9 +25,17 @@ class HungerViewModel : ViewModel() {
     var currentScreen by mutableStateOf(getInitialScreen())
         private set
 
+    var currentMealId by mutableStateOf<String?>(null)
+        private set
+
     fun navigateTo(screen: AppScreen) {
         backStack.add(currentScreen)
         currentScreen = screen
+    }
+
+    fun navigateToSearch(mealId: String) {
+        currentMealId = mealId
+        navigateTo(AppScreen.CALORIES_SEARCH)
     }
 
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)

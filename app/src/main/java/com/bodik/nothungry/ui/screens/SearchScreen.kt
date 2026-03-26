@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,37 +54,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.Product
+import com.bodik.nothungry.ui.components.CaloriesDialog
+import com.bodik.nothungry.ui.components.CaloriesTopBar
+import com.bodik.nothungry.ui.components.PlainTextField
 import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 
 // --- Переиспользуемые компоненты ---
-
-@Composable
-fun CaloriesDialog(
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(RADIUS_OUTER)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                content = { content() }
-            )
-        }
-    }
-}
 
 @Composable
 fun NumberInputBox(
@@ -133,50 +111,18 @@ fun NumberInputBox(
     }
 }
 
-@Composable
-fun PlainTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    fontSize: Int = 22,
-    color: @Composable () -> androidx.compose.ui.graphics.Color = { MaterialTheme.colorScheme.onSurface },
-    focusRequester: FocusRequester? = null,
-) {
-    val resolvedColor = color()
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        textStyle = TextStyle(fontSize = fontSize.sp, color = resolvedColor),
-        modifier = modifier
-            .fillMaxWidth()
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-        singleLine = true,
-        decorationBox = { innerTextField ->
-            if (value.isEmpty()) {
-                Text(
-                    text = placeholder,
-                    style = TextStyle(
-                        fontSize = fontSize.sp,
-                        color = resolvedColor.copy(alpha = 0.5f)
-                    )
-                )
-            }
-            innerTextField()
-        }
-    )
-}
-
 // --- SearchScreen ---
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(
     viewModel: CaloriesViewModel,
+    mealId: String,
     onBack: () -> Unit,
 ) {
     val productsCache = viewModel.productsCache
-    val selectedItems = viewModel.selectedItems
+    val totalCalories = viewModel.meals.sumOf { it.totalCalories }
+    val dailyNorm = viewModel.dailyNorm
 
     var searchQuery by remember { mutableStateOf("") }
     var pendingProduct by remember { mutableStateOf<Product?>(null) }
@@ -191,14 +137,10 @@ fun SearchScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         topBar = {
-            Column(modifier = Modifier.padding(top = 40.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            CaloriesTopBar(
+                totalCalories = totalCalories,
+                dailyNorm = dailyNorm,
+                navigationIcon = {
                     IconButton(
                         onClick = onBack,
                         colors = IconButtonDefaults.filledIconButtonColors(
@@ -207,55 +149,56 @@ fun SearchScreen(
                         ),
                         modifier = Modifier.size(42.dp),
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            null,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
-
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp)
-                            .height(56.dp),
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, "Очистить")
-                                }
-                            }
-                        },
-                        shape = CircleShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
-                        )
-                    )
-
-                    IconButton(
-                        onClick = {
-                            editTitle = searchQuery
-                            editCals = ""
-                            editDescription = ""
-                            productToEdit = null
-                            showEditDialog = true
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier.size(42.dp),
+                },
+                bottomContent = {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Add, null, modifier = Modifier.size(32.dp))
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Поиск") },
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Clear, null)
+                                    }
+                                }
+                            },
+                            shape = CircleShape,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            )
+                        )
+                        IconButton(
+                            onClick = {
+                                editTitle = searchQuery
+                                editCals = ""
+                                editDescription = ""
+                                productToEdit = null
+                                showEditDialog = true
+                            },
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier.size(42.dp),
+                        ) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(32.dp))
+                        }
                     }
                 }
-            }
+            )
         }
     ) { padding ->
         val filtered = productsCache
@@ -269,7 +212,7 @@ fun SearchScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(10.dp),
+            contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 0.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             itemsIndexed(items = filtered, key = { _, p -> p.id ?: p.title }) { index, product ->
@@ -344,11 +287,13 @@ fun SearchScreen(
                     onClick = {
                         val w = weightInput.toIntOrNull() ?: 0
                         if (w > 0) {
-                            val idx =
-                                selectedItems.indexOfFirst { it.title == pendingProduct?.title }
-                            if (idx != -1) selectedItems[idx] =
-                                selectedItems[idx].copy(weight = selectedItems[idx].weight + w)
-                            else selectedItems.add(pendingProduct!!.copy(weight = w))
+                            viewModel.addProductToMeal(
+                                mealId,
+                                pendingProduct!!.copy(
+                                    id = pendingProduct!!.id + "_" + System.currentTimeMillis(),
+                                    weight = w
+                                )
+                            )
                             pendingProduct = null
                             searchQuery = ""
                         }

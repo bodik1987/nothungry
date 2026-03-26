@@ -16,8 +16,8 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
     private val diaryPrefs = app.getSharedPreferences("diary", Context.MODE_PRIVATE)
     private val userPrefs = app.getSharedPreferences("user_settings", Context.MODE_PRIVATE)
 
-    /** Позиции дневника питания за день */
-    val selectedItems = mutableStateListOf<Product>()
+    /** Приёмы пищи за день */
+    val meals = mutableStateListOf<Meal>()
 
     /** Кэш продуктов для поиска (начинается с дефолтного списка) */
     val productsCache = mutableStateListOf<Product>()
@@ -29,10 +29,10 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     init {
-        // Загружаем дневник
-        diaryPrefs.getString("items", null)?.let { saved ->
+        // Загружаем дневник (приёмы пищи)
+        diaryPrefs.getString("meals", null)?.let { saved ->
             try {
-                selectedItems.addAll(Json.decodeFromString<List<Product>>(saved))
+                meals.addAll(Json.decodeFromString<List<Meal>>(saved))
             } catch (_: Exception) {
             }
         }
@@ -53,15 +53,73 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- Дневник ----------
 
     fun saveDiary() {
-        diaryPrefs.edit { putString("items", Json.encodeToString(selectedItems.toList())) }
+        diaryPrefs.edit { putString("meals", Json.encodeToString(meals.toList())) }
     }
 
     fun clearDay() {
-        selectedItems.clear()
+        meals.clear()
         saveDiary()
     }
 
-    // ---------- Продукты ----------
+    // ---------- Приёмы пищи ----------
+
+    fun addMeal(name: String): Meal {
+        val meal = Meal(id = System.currentTimeMillis().toString(), name = name)
+        meals.add(meal)
+        saveDiary()
+        return meal
+    }
+
+    fun renameMeal(mealId: String, newName: String) {
+        val idx = meals.indexOfFirst { it.id == mealId }
+        if (idx != -1) meals[idx] = meals[idx].copy(name = newName)
+        saveDiary()
+    }
+
+    fun deleteMeal(mealId: String) {
+        meals.removeAll { it.id == mealId }
+        saveDiary()
+    }
+
+    // ---------- Продукты внутри приёма ----------
+
+    /** Добавить или увеличить вес продукта в конкретном приёме */
+    fun addProductToMeal(mealId: String, product: Product) {
+        val mealIdx = meals.indexOfFirst { it.id == mealId }
+        if (mealIdx == -1) return
+        val meal = meals[mealIdx]
+        val existingIdx = meal.items.indexOfFirst { it.title == product.title }
+        val updatedItems = meal.items.toMutableList()
+        if (existingIdx != -1) {
+            updatedItems[existingIdx] =
+                updatedItems[existingIdx].copy(weight = updatedItems[existingIdx].weight + product.weight)
+        } else {
+            updatedItems.add(product)
+        }
+        meals[mealIdx] = meal.copy(items = updatedItems)
+        saveDiary()
+    }
+
+    fun updateProductInMeal(mealId: String, updated: Product) {
+        val mealIdx = meals.indexOfFirst { it.id == mealId }
+        if (mealIdx == -1) return
+        val meal = meals[mealIdx]
+        val updatedItems = meal.items.toMutableList()
+        val itemIdx = updatedItems.indexOfFirst { it.id == updated.id }
+        if (itemIdx != -1) updatedItems[itemIdx] = updated
+        meals[mealIdx] = meal.copy(items = updatedItems)
+        saveDiary()
+    }
+
+    fun removeProductFromMeal(mealId: String, product: Product) {
+        val mealIdx = meals.indexOfFirst { it.id == mealId }
+        if (mealIdx == -1) return
+        val meal = meals[mealIdx]
+        meals[mealIdx] = meal.copy(items = meal.items.filter { it.id != product.id })
+        saveDiary()
+    }
+
+    // ---------- Продукты (кэш) ----------
 
     fun saveProducts() {
         userPrefs.edit { putString("products", Json.encodeToString(productsCache.toList())) }

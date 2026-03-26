@@ -45,11 +45,12 @@ fun AppContent(
 
         AppScreen.CALORIES -> DayCalories(
             viewModel = caloriesViewModel,
-            onNavigateToSearch = { viewModel.navigateTo(AppScreen.CALORIES_SEARCH) },
+            onNavigateToSearch = { mealId -> viewModel.navigateToSearch(mealId) },
         )
 
         AppScreen.CALORIES_SEARCH -> SearchScreen(
             viewModel = caloriesViewModel,
+            mealId = viewModel.currentMealId ?: "",
             onBack = { viewModel.navigateBack() }
         )
     }
