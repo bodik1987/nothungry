@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -81,7 +80,7 @@ fun NumberInputBox(
             .height(48.dp)
             .background(
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(RADIUS_OUTER / 2)
+                shape = RoundedCornerShape(RADIUS_OUTER)
             )
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center
@@ -177,7 +176,7 @@ fun SearchScreen(
                                     }
                                 }
                             },
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(RADIUS_OUTER),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -315,7 +314,8 @@ fun SearchScreen(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(RADIUS_OUTER),
                     ) { Text("Добавить") }
                 }
             }
@@ -363,7 +363,8 @@ fun SearchScreen(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(RADIUS_OUTER),
                 ) { Text("Сохранить") }
             }
             if (productToEdit != null) {
@@ -373,7 +374,8 @@ fun SearchScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.error
-                    )
+                    ),
+                    shape = RoundedCornerShape(RADIUS_OUTER),
                 ) { Text("Удалить") }
             }
         }

@@ -442,7 +442,7 @@ private fun MealCard(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                Button(onClick = onAddProducts) {
+                Button(onClick = onAddProducts, shape = RoundedCornerShape(RADIUS_OUTER)) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                 }
             }
@@ -527,26 +527,25 @@ private fun AddMealDialog(
             fontSize = 24,
         )
 
-        // Передаем текущее имя и лямбду для обновления
         QuickOptions(
             selectedOption = mealName,
             onOptionClick = { mealName = it }
         )
 
-        Text(
-            text = "Положи меньше - добавить успеешь. Уменьшай плотность еды",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline
-        )
-
         Button(
             onClick = { onConfirm(mealName.ifBlank { "Приём пищи" }, true) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(DEFAULT_SPACER),
+            shape = RoundedCornerShape(RADIUS_OUTER),
         ) {
             Text("Добавить продукты")
         }
+
+        Text(
+            text = "Меньше порция, уменьшай плотность еды",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline
+        )
     }
 }
 

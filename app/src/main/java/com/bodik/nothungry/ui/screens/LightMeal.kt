@@ -1,7 +1,9 @@
 package com.bodik.nothungry.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,6 +13,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -22,9 +25,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bodik.nothungry.ui.components.IslandColumn
 import com.bodik.nothungry.ui.components.IslandListItem
@@ -195,30 +200,35 @@ fun LightMeal(
 
                 Spacer(modifier = Modifier.height(DEFAULT_SPACER * 2))
 
-                Button(
-                    onClick = { save() },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(DEFAULT_SPACER),
-                    shape = RoundedCornerShape(RADIUS_OUTER),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = if (editingMeal != null) "Сохранить изменения" else "Сохранить",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
+                    if (editingMeal != null) {
+                        Button(
+                            onClick = {
+                                showSheet = false
+                                deletingMeal = editingMeal
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            contentPadding = PaddingValues(DEFAULT_SPACER),
+                            shape = RoundedCornerShape(RADIUS_OUTER),
+                        ) { Text("Удалить") }
+                    }
 
-                if (editingMeal != null) {
-                    Spacer(modifier = Modifier.height(DEFAULT_SPACER))
-                    TextButton(
-                        onClick = {
-                            showSheet = false
-                            deletingMeal = editingMeal
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    Button(
+                        onClick = { save() },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(DEFAULT_SPACER),
+                        shape = RoundedCornerShape(RADIUS_OUTER),
                     ) {
                         Text(
-                            text = "Удалить блюдо",
-                            color = MaterialTheme.colorScheme.error
+                            text = if (editingMeal != null) "Сохранить изменения" else "Сохранить",
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
