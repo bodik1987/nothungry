@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.Meal
 import com.bodik.nothungry.data.Product
+import com.bodik.nothungry.ui.components.AddIconButton
 import com.bodik.nothungry.ui.components.ButtonGroup
 import com.bodik.nothungry.ui.components.ButtonGroupItem
 import com.bodik.nothungry.ui.components.CaloriesDialog
@@ -421,7 +422,8 @@ private fun MealCard(
             .padding(horizontal = 12.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+//        shadowElevation = 4.dp
     ) {
         Column {
             Row(
@@ -442,9 +444,7 @@ private fun MealCard(
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                Button(onClick = onAddProducts, shape = RoundedCornerShape(RADIUS_OUTER)) {
-                    Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                }
+                AddIconButton(onClick = onAddProducts)
             }
 
             if (meal.items.isNotEmpty()) {

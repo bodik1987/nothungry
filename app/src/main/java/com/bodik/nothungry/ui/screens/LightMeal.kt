@@ -31,38 +31,22 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bodik.nothungry.data.CaloriesViewModel
+import com.bodik.nothungry.data.LightMealItem
 import com.bodik.nothungry.ui.components.IslandColumn
 import com.bodik.nothungry.ui.components.IslandListItem
 import com.bodik.nothungry.ui.components.ScreenLayout
 import com.bodik.nothungry.ui.theme.DEFAULT_SPACER
 import com.bodik.nothungry.ui.theme.RADIUS_OUTER
 
-data class Meal(
-    val id: Int = 0,
-    val name: String,
-    val description: String = ""
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LightMeal(
-) {
-    var meals by remember {
-        mutableStateOf(
-            listOf(
-                Meal(1, "Салат с тунцом", "Капуста, тунец, помидор, лук"),
-                Meal(2, "Творог"),
-                Meal(3, "Квашеные овощи"),
-                Meal(4, "Чай"),
-                Meal(5, "Яичница"),
-                Meal(5, "Яблоко")
-            )
-        )
-    }
+fun LightMeal(viewModel: CaloriesViewModel) {
+    val meals = viewModel.lightMeals
 
     var showSheet by remember { mutableStateOf(false) }
-    var editingMeal by remember { mutableStateOf<Meal?>(null) }
-    var deletingMeal by remember { mutableStateOf<Meal?>(null) }
+    var editingMeal by remember { mutableStateOf<LightMealItem?>(null) }
+    var deletingMeal by remember { mutableStateOf<LightMealItem?>(null) }
     var newMealName by remember { mutableStateOf("") }
     var newMealDesc by remember { mutableStateOf("") }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -74,7 +58,7 @@ fun LightMeal(
         showSheet = true
     }
 
-    fun openEdit(meal: Meal) {
+    fun openEdit(meal: LightMealItem) {
         editingMeal = meal
         newMealName = meal.name
         newMealDesc = meal.description
@@ -83,23 +67,21 @@ fun LightMeal(
 
     fun save() {
         if (newMealName.isBlank()) return
-        meals = if (editingMeal != null) {
-            meals.map {
-                if (it.id == editingMeal!!.id) it.copy(
+        if (editingMeal != null) {
+            viewModel.updateLightMeal(
+                editingMeal!!.copy(
                     name = newMealName,
                     description = newMealDesc
                 )
-                else it
-            }
+            )
         } else {
-            val nextId = (meals.maxOfOrNull { it.id } ?: 0) + 1
-            meals + Meal(nextId, newMealName, newMealDesc)
+            viewModel.addLightMeal(newMealName, newMealDesc)
         }
         showSheet = false
     }
 
-    fun delete(meal: Meal) {
-        meals = meals.filter { it.id != meal.id }
+    fun delete(meal: LightMealItem) {
+        viewModel.deleteLightMeal(meal)
         deletingMeal = null
     }
 

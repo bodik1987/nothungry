@@ -22,6 +22,9 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
     /** Кэш продуктов для поиска (начинается с дефолтного списка) */
     val productsCache = mutableStateListOf<Product>()
 
+    /** Список блюд лёгкого приёма пищи */
+    val lightMeals = mutableStateListOf<LightMealItem>()
+
     /** Настройки пользователя */
     var userWeight by mutableFloatStateOf(userPrefs.getFloat("weight", 82f))
         private set
@@ -41,12 +44,30 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
         val savedProducts = userPrefs.getString("products", null)
         if (savedProducts != null) {
             try {
-                productsCache.addAll(Json.decodeFromString<List<Product>>(savedProducts))
+                val loaded = Json.decodeFromString<List<Product>>(savedProducts)
+                val defaultMap = DEFAULT_PRODUCTS.associateBy { it.id }
+                productsCache.addAll(loaded.map { p ->
+                    defaultMap[p.id]?.let { default -> p.copy(isDanger = default.isDanger) } ?: p
+                })
             } catch (_: Exception) {
                 productsCache.addAll(DEFAULT_PRODUCTS)
             }
         } else {
             productsCache.addAll(DEFAULT_PRODUCTS)
+        }
+
+        // Загружаем блюда лёгкого приёма пищи
+        userPrefs.getString("light_meals", null)?.let { saved ->
+            try {
+                lightMeals.addAll(Json.decodeFromString<List<LightMealItem>>(saved))
+            } catch (_: Exception) {
+            }
+        }
+
+        // Если список пустой — добавляем дефолтные блюда
+        if (lightMeals.isEmpty()) {
+            lightMeals.addAll(DEFAULT_LIGHT_MEALS)
+            saveLightMeals()
         }
     }
 
@@ -141,6 +162,34 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteProduct(product: Product) {
         productsCache.removeAll { it.id == product.id }
         saveProducts()
+    }
+
+    // ---------- Лёгкий приём пищи ----------
+
+    fun saveLightMeals() {
+        userPrefs.edit { putString("light_meals", Json.encodeToString(lightMeals.toList())) }
+    }
+
+    fun addLightMeal(name: String, description: String) {
+        lightMeals.add(
+            LightMealItem(
+                id = System.currentTimeMillis(),
+                name = name,
+                description = description
+            )
+        )
+        saveLightMeals()
+    }
+
+    fun updateLightMeal(updated: LightMealItem) {
+        val idx = lightMeals.indexOfFirst { it.id == updated.id }
+        if (idx != -1) lightMeals[idx] = updated
+        saveLightMeals()
+    }
+
+    fun deleteLightMeal(item: LightMealItem) {
+        lightMeals.removeAll { it.id == item.id }
+        saveLightMeals()
     }
 
     // ---------- Настройки пользователя ----------

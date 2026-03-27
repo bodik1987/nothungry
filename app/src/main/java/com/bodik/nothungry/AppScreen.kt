@@ -32,7 +32,7 @@ fun AppContent(
             onUnsure = { viewModel.navigateTo(AppScreen.UNSURE) },
         )
 
-        AppScreen.LIGHT_MEAL -> LightMeal()
+        AppScreen.LIGHT_MEAL -> LightMeal(viewModel = caloriesViewModel)
 
         AppScreen.UNSURE -> Unsure(
             onLightMeal = { viewModel.navigateTo(AppScreen.LIGHT_MEAL) }

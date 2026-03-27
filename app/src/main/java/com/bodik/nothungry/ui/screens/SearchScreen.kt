@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -59,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bodik.nothungry.data.CaloriesViewModel
 import com.bodik.nothungry.data.Product
+import com.bodik.nothungry.ui.components.AddIconButton
 import com.bodik.nothungry.ui.components.CaloriesDialog
 import com.bodik.nothungry.ui.components.CaloriesTopBar
 import com.bodik.nothungry.ui.components.PlainTextField
@@ -187,22 +187,15 @@ fun SearchScreen(
                                 unfocusedBorderColor = Color.Transparent
                             )
                         )
-                        IconButton(
+                        AddIconButton(
                             onClick = {
                                 editTitle = searchQuery
                                 editCals = ""
                                 editDescription = ""
                                 productToEdit = null
                                 showEditDialog = true
-                            },
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                contentColor = MaterialTheme.colorScheme.primary
-                            ),
-                            modifier = Modifier.size(42.dp),
-                        ) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(32.dp))
-                        }
+                            }
+                        )
                     }
 
                     Surface(
@@ -262,7 +255,13 @@ fun SearchScreen(
                                 }
                             )
                             .padding(2.dp),
-                        headlineContent = { Text(product.title, fontSize = 18.sp) },
+                        headlineContent = {
+                            Text(
+                                product.title,
+                                fontSize = 18.sp,
+                                color = if (product.isDanger) MaterialTheme.colorScheme.error else Color.Unspecified
+                            )
+                        },
                         supportingContent = {
                             Column {
                                 if (!product.description.isNullOrEmpty()) {
@@ -368,6 +367,8 @@ fun SearchScreen(
 
     // --- Диалог создания/редактирования продукта ---
     if (showEditDialog) {
+        var editIsDanger by remember { mutableStateOf(productToEdit?.isDanger ?: false) }
+
         CaloriesDialog(onDismiss = { showEditDialog = false }) {
             PlainTextField(
                 value = editTitle,
@@ -382,6 +383,16 @@ fun SearchScreen(
                 fontSize = 16,
                 color = { MaterialTheme.colorScheme.outline }
             )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Пометить как опасный")
+                Spacer(Modifier.weight(1f))
+                androidx.compose.material3.Switch(
+                    checked = editIsDanger,
+                    onCheckedChange = { editIsDanger = it }
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -399,7 +410,8 @@ fun SearchScreen(
                             id = productToEdit?.id,
                             title = editTitle,
                             calories = editCals.toIntOrNull() ?: 0,
-                            description = editDescription
+                            description = editDescription,
+                            isDanger = editIsDanger
                         )
                         if (productToEdit == null) viewModel.addProduct(p)
                         else viewModel.updateProduct(p)
@@ -411,6 +423,7 @@ fun SearchScreen(
                     shape = RoundedCornerShape(RADIUS_OUTER),
                 ) { Text("Сохранить") }
             }
+
             if (productToEdit != null) {
                 Button(
                     onClick = { viewModel.deleteProduct(productToEdit!!); showEditDialog = false },
