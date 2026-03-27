@@ -77,7 +77,6 @@ import com.bodik.nothungry.data.Product
 import com.bodik.nothungry.ui.components.AddIconButton
 import com.bodik.nothungry.ui.components.ButtonGroup
 import com.bodik.nothungry.ui.components.ButtonGroupItem
-import com.bodik.nothungry.ui.components.CaloriesDialog
 import com.bodik.nothungry.ui.components.CaloriesTopBar
 import com.bodik.nothungry.ui.components.PlainTextField
 import com.bodik.nothungry.ui.theme.DEFAULT_SPACER
@@ -223,7 +222,7 @@ fun DayCalories(
     }
 
     if (showAddMealDialog) {
-        AddMealDialog(
+        AddMealBottomSheet(
             onDismiss = { showAddMealDialog = false },
             onConfirm = { name, navigateNow ->
                 val meal = viewModel.addMeal(name)
@@ -540,7 +539,7 @@ private fun QuickOptions(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         options.forEach { option ->
             val isSelected = selectedOption == option
@@ -548,47 +547,60 @@ private fun QuickOptions(
                 selected = isSelected,
                 onClick = { onOptionClick(option) },
                 label = { Text(option) },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 leadingIcon = null
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddMealDialog(
+fun AddMealBottomSheet(
     onDismiss: () -> Unit,
     onConfirm: (name: String, navigateNow: Boolean) -> Unit,
 ) {
     var mealName by remember { mutableStateOf("Приём пищи") }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    CaloriesDialog(onDismiss = onDismiss) {
-        PlainTextField(
-            value = mealName,
-            onValueChange = { mealName = it },
-            placeholder = "Название приёма",
-            fontSize = 24,
-        )
-
-        QuickOptions(
-            selectedOption = mealName,
-            onOptionClick = { mealName = it }
-        )
-
-        Button(
-            onClick = { onConfirm(mealName.ifBlank { "Приём пищи" }, true) },
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(DEFAULT_SPACER),
-            shape = RoundedCornerShape(RADIUS_OUTER),
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(DEFAULT_SPACER)
         ) {
-            Text("Добавить продукты")
-        }
+            PlainTextField(
+                value = mealName,
+                onValueChange = { mealName = it },
+                placeholder = "Название приёма",
+                fontSize = 24,
+            )
 
-        Text(
-            text = "Меньше порция, уменьшай плотность еды",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline
-        )
+            QuickOptions(
+                selectedOption = mealName,
+                onOptionClick = { mealName = it }
+            )
+
+            Button(
+                onClick = { onConfirm(mealName.ifBlank { "Приём пищи" }, true) },
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(DEFAULT_SPACER),
+                shape = RoundedCornerShape(RADIUS_OUTER),
+            ) {
+                Text("Добавить продукты")
+            }
+
+            Text(
+                text = "Меньше порция, уменьшай плотность еды",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
     }
 }
 
