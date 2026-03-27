@@ -52,8 +52,7 @@ fun ButtonGroup(
                             contentColor = MaterialTheme.colorScheme.onErrorContainer
                         )
                     } else androidx.compose.material3.ButtonDefaults.buttonColors(),
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(
                         topStart = if (isFirstRow) RADIUS_OUTER else RADIUS_INNER,
                         topEnd = if (isFirstRow) RADIUS_OUTER else RADIUS_INNER,
@@ -90,7 +89,7 @@ fun ButtonGroup(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .heightIn(min = 72.dp),
+                                .heightIn(min = 60.dp),
                             shape = RoundedCornerShape(
                                 topStart = if (isFirstRow && isLeft) RADIUS_OUTER else RADIUS_INNER,
                                 topEnd = if (isFirstRow && !isLeft) RADIUS_OUTER else RADIUS_INNER,

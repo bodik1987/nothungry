@@ -1,5 +1,7 @@
 package com.bodik.nothungry.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -59,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -156,9 +160,9 @@ fun DayCalories(
                     androidx.compose.material3.FloatingActionButton(
                         onClick = onLightMeal,
                         modifier = Modifier.size(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        shape = CircleShape,
+                        containerColor = Color(0xFF56935A),
+                        contentColor = Color(0xFFFFFFFF),
                     ) {
                         Icon(
                             imageVector = Icons.Default.EnergySavingsLeaf,
@@ -284,6 +288,28 @@ fun DayCalories(
         var tempWeight by remember { mutableFloatStateOf(viewModel.userWeight) }
         var tempAge by remember { mutableStateOf(viewModel.userAge.toString()) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val context = LocalContext.current
+
+        val backupLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/json")
+        ) { uri ->
+            uri?.let {
+                context.contentResolver.openOutputStream(it)?.use { stream ->
+                    stream.write(viewModel.exportBackup().toByteArray())
+                }
+            }
+        }
+
+        val restoreLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            uri?.let {
+                val json = context.contentResolver.openInputStream(it)
+                    ?.bufferedReader()?.readText() ?: return@let
+                viewModel.importBackup(json)
+                showSettingsSheet = false
+            }
+        }
 
         ModalBottomSheet(
             onDismissRequest = { showSettingsSheet = false },
@@ -328,6 +354,23 @@ fun DayCalories(
                             )
                             showSettingsSheet = false
                         }),
+                    )
+                )
+
+                ButtonGroup(
+                    items = listOf(
+                        ButtonGroupItem(
+                            "Бэкап",
+                            {
+                                backupLauncher.launch("nothungry_backup.json")
+                            }
+                        ),
+                        ButtonGroupItem(
+                            "Восстановить",
+                            {
+                                restoreLauncher.launch(arrayOf("application/json"))
+                            }
+                        ),
                     )
                 )
 

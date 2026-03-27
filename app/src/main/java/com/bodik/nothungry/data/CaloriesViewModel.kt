@@ -203,4 +203,46 @@ class CaloriesViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- Норма калорий ----------
 
     val dailyNorm: Int get() = (88 + 13 * userWeight + 4.2 * 178 - 5.7 * userAge).toInt()
+
+    // ---------- Бэкап ----------
+
+    fun exportBackup(): String {
+        return Json.encodeToString(
+            mapOf(
+                "meals" to Json.encodeToString(meals.toList()),
+                "products" to Json.encodeToString(productsCache.toList()),
+                "light_meals" to Json.encodeToString(lightMeals.toList()),
+                "weight" to userWeight.toString(),
+                "age" to userAge.toString()
+            )
+        )
+    }
+
+    fun importBackup(json: String): Boolean {
+        return try {
+            val map = Json.decodeFromString<Map<String, String>>(json)
+            map["meals"]?.let { meals.addAll(Json.decodeFromString<List<Meal>>(it)) }
+            map["products"]?.let {
+                productsCache.clear(); productsCache.addAll(
+                Json.decodeFromString<List<Product>>(
+                    it
+                )
+            )
+            }
+            map["light_meals"]?.let {
+                lightMeals.clear(); lightMeals.addAll(
+                Json.decodeFromString<List<LightMealItem>>(
+                    it
+                )
+            )
+            }
+            val weight = map["weight"]?.toFloatOrNull() ?: userWeight
+            val age = map["age"]?.toIntOrNull() ?: userAge
+            saveUserSettings(weight, age)
+            saveDiary(); saveProducts(); saveLightMeals()
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
